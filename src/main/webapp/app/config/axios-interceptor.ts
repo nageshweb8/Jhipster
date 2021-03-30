@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getBasePath, Storage } from 'react-jhipster';
+import { Storage } from 'react-jhipster';
 
 import { SERVER_API_URL } from 'app/config/constants';
 
@@ -9,6 +9,10 @@ axios.defaults.baseURL = SERVER_API_URL;
 
 const setupAxiosInterceptors = onUnauthenticated => {
   const onRequestSuccess = config => {
+    const token = Storage.local.get('jhi-authenticationToken') || Storage.session.get('jhi-authenticationToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   };
   const onResponseSuccess = response => response;

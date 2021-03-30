@@ -16,16 +16,11 @@
 logging:
   level:
     ROOT: DEBUG
-    io.github.jhipster: DEBUG
+    tech.jhipster: DEBUG
+    org.hibernate.SQL: DEBUG
     com.mycompany.myapp: DEBUG
 
 spring:
-  profiles:
-    active: dev
-    include:
-      - swagger
-      # Uncomment to activate TLS for the dev profile
-      #- tls
   devtools:
     restart:
       enabled: true
@@ -35,13 +30,22 @@ spring:
   jackson:
     serialization:
       indent-output: true
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:h2:file:./target/h2db/db/jhipster;DB_CLOSE_DELAY=-1
+    username: Jhipster
+    password:
+    hikari:
+      poolName: Hikari
+      auto-commit: false
   h2:
     console:
       enabled: false
+  jpa:
+    database-platform: tech.jhipster.domain.util.FixedH2Dialect
   liquibase:
     # Remove 'faker' if you do not want the sample data to be loaded automatically
     contexts: dev, faker
-    url: jdbc:h2:file:target/h2db/db/jhipster;DB_CLOSE_DELAY=-1
   mail:
     host: localhost
     port: 25
@@ -49,10 +53,6 @@ spring:
     password:
   messages:
     cache-duration: PT1S # 1 second, see the ISO 8601 standard
-  r2dbc:
-    url: r2dbc:h2:file:///./target/h2db/db/jhipster?options=DB_CLOSE_DELAY=-1
-    username: Jhipster
-    password:
   thymeleaf:
     cache: false
 
@@ -66,20 +66,29 @@ server:
 # ===================================================================
 
 jhipster:
-  # CORS is only enabled by default with the "dev" profile, so BrowserSync can access the API
+  cache: # Cache configuration
+    ehcache: # Ehcache configuration
+      time-to-live-seconds: 3600 # By default objects stay 1 hour in the cache
+      max-entries: 100 # Number of objects in each cache entry
+  # CORS is only enabled by default with the "dev" profile
   cors:
-    allowed-origins: '*'
+    # Allow Ionic for JHipster by default (* no longer allowed in Spring Boot 2.4+)
+    allowed-origins: 'http://localhost:8100'
     allowed-methods: '*'
     allowed-headers: '*'
-    exposed-headers: 'Link,X-Total-Count'
+    exposed-headers: 'Authorization,Link,X-Total-Count,X-${jhipster.clientApp.name}-alert,X-${jhipster.clientApp.name}-error,X-${jhipster.clientApp.name}-params'
     allow-credentials: true
     max-age: 1800
+  security:
+    authentication:
+      jwt:
+        # This token must be encoded using Base64 and be at least 256 bits long (you can type `openssl rand -base64 64` on your command line to generate a 512 bits one)
+        base64-secret: MDE1M2ZmOTllZGU1OWUyZmIxMDNhMGQ5ZmE4NmJmY2M2ZjkzZTA5YWQ0N2ZkMzlkNWJkMjY0YzZiYWU4NTg1MDZjNWYwYmE3ZjQ3NmY2MTZlNDRjOTRkOWQzZGUxOGFiZGIzOWEwMjg3ZDk0M2E0NjkyODEwNDRlYjAyNmUzNzY=
+        # Token is valid 24 hours
+        token-validity-in-seconds: 86400
+        token-validity-in-seconds-for-remember-me: 2592000
   mail: # specific JHipster mail property, for standard properties see MailProperties
     base-url: http://127.0.0.1:8080
-  metrics:
-    logs: # Reports metrics in the logs
-      enabled: false
-      report-frequency: 60 # in seconds
   logging:
     use-json-format: false # By default, logs are not in Json format
     logstash: # Forward logs to logstash over a socket, used by LoggingConfiguration
@@ -87,9 +96,6 @@ jhipster:
       host: localhost
       port: 5000
       queue-size: 512
-  audit-events:
-    retention-period: 30 # Number of days before audit events are deleted.
-
 # ===================================================================
 # Application specific properties
 # Add your own application properties here, see the ApplicationProperties class
